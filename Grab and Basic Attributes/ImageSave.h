@@ -28,7 +28,7 @@ public:
 	int ThreadCount;
 	//int ImageCountInThread;
 	CString FileDire;
-	unsigned char* imagearray[200]; 
+	//unsigned char* imagearray[200]; 
 	int copycount;//用于指示两个保存数组，使用哪一个，双缓冲机制
 	CCriticalSection critical_section;
 public:

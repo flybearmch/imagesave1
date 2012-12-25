@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ImageSave.h"
 #include "iostream"
+#include "fstream"
 using namespace std;
 typedef int VisionError;
 
@@ -63,17 +64,84 @@ UINT CImageSave::ImageSaveThreadFuncInternal ()
 	//临界区
 	//static int count=0;
 	//SYSTEMTIME st;
+	savecount=0;
+	int cols=656;
+	int rows=100;
 	CString fileName;
-	Image* imagetemp=NULL;
+	//Image* imagetemp=NULL;
+	ImageInfo info;
+	unsigned char imagearray[656][100];
+	unsigned char* pixel;
+	void* ip;
 	while(!stopISThread)
 	{
-		//critical_section.Lock();
+		fileName.Format(_T("%s\\%d_%d.dat"),FileDire,ThreadCount,savecount);
+		ofstream outfile(fileName.GetBuffer(),ios::out|ios::binary|ios::trunc);
+		if (!outfile)
+		{
+			cout<<"open file error in ImageSave thread"<<endl;
+			continue;
+		}
 		WaitForSingleObject(semaphoreFull->m_hObject,INFINITE);
-		imagetemp=imageCopy[out_index];
-		out_index=(out_index+1)%copysize;
-		ReleaseSemaphore(semaphoreEmpty->m_hObject,1,NULL);
-
-		if (imagetemp)
+		critical_section.Lock();
+		if (copycount==0)
+		{
+			//采集线程正向imagecopy[]数组中写数据
+			for(int i=0;i<200;i++)
+			{
+				//ip=imaqImageToArray(imageCopy2[i],IMAQ_NO_RECT,&cols,&rows);
+				imaqGetImageInfo( imageCopy2[i], &info );
+				pixel = (unsigned char*)info.imageStart;
+				for ( int y = 0; y < info.yRes; y++ )
+				{
+					for ( int x = 0; x < info.xRes; x++ )
+					{ 
+						//*pixel = 128;
+						//pixel += 1;
+						imagearray[x][y]=*pixel;
+						pixel += 1;
+					}
+					pixel += info.pixelsPerLine - info.xRes; // jump over all padding and border
+				}
+				for (int j=0;j<rows;j++)
+				{
+					outfile.write((const char*)imagearray[j],cols);
+				}			
+			}
+		} 
+		else
+		{
+			for(int i=0;i<200;i++)
+			{
+				//ip=imaqImageToArray(imageCopy2[i],IMAQ_NO_RECT,&cols,&rows);
+				imaqGetImageInfo( imageCopy[i], &info );
+				pixel = (unsigned char*)info.imageStart;
+				for ( int y = 0; y < info.yRes; y++ )
+				{
+					for ( int x = 0; x < info.xRes; x++ )
+					{ 
+						//*pixel = 128;
+						//pixel += 1;
+						imagearray[x][y]=*pixel;
+						pixel += 1;
+					}
+					pixel += info.pixelsPerLine - info.xRes; // jump over all padding and border
+				}
+				for (int j=0;j<rows;j++)
+				{
+					outfile.write((const char*)imagearray[j],cols);
+				}			
+			}
+		}
+		//imaqDispose(ip);
+		savecount++;
+		critical_section.Unlock();
+		outfile.close();
+		//imagetemp=imageCopy[out_index];
+		//out_index=(out_index+1)%copysize;
+		//ReleaseSemaphore(semaphoreEmpty->m_hObject,1,NULL);
+		
+		/*if (imagetemp)
 		{
 			//if (count<2)
 			//{
@@ -94,7 +162,7 @@ UINT CImageSave::ImageSaveThreadFuncInternal ()
 			//销毁资源 是否必要？
 			//imaqDispose(imagetemp);
 			//imagetemp=NULL;
-		}	
+		}	*/
 
 	}
 	return 0;

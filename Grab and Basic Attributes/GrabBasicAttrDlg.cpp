@@ -355,7 +355,7 @@ UINT CGrabBasicAttrDlg::GrabThreadFuncInternal ()
 		//oldimageBufferNumber=imageBufferNumber;
 		//imageBufferNumber=bufferNumber;
 		//imagesave[count].ThreadCount=count;
-		WaitForSingleObject(imagesave[count].semaphoreEmpty->m_hObject,NULL);//返回值很有用，可以达到我想要达到的想过，设定一定的等待时间，如果超时，那么和成功返回的返回值是不一样的，以此来判断下一步该怎么做；INFINITE
+		//WaitForSingleObject(imagesave[count].semaphoreEmpty->m_hObject,NULL);//返回值很有用，可以达到我想要达到的想过，设定一定的等待时间，如果超时，那么和成功返回的返回值是不一样的，以此来判断下一步该怎么做；INFINITE
 		if (imagesave[count].copycount==0)
 		{
 			imaqDuplicate(imagesave[count].imageCopy[imagesave[count].in_index],image);
@@ -368,7 +368,9 @@ UINT CGrabBasicAttrDlg::GrabThreadFuncInternal ()
 		imagesave[count].in_index=(imagesave[count].in_index+1)%imageCopyNum;
 		if (imagesave[count].in_index==0)
 		{
+			imagesave[count].critical_section.Lock();
 			imagesave[count].copycount=(imagesave[count].copycount+1)%2;
+			imagesave[count].critical_section.Unlock();
 		}
 		ReleaseSemaphore(imagesave[count].semaphoreFull->m_hObject,1,NULL);
 		
