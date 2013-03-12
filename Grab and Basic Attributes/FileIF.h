@@ -9,5 +9,6 @@ public:
 public:
 	BOOL FileExist(CString strFileName);
 	BOOL CreateFolder(CString strPath);
+
 	void ErrorProcess(LPTSTR lpszFunction);
 };
